@@ -1,6 +1,4 @@
-type I256 = [u64; 4];
-
-pub(crate) fn extended_eucledian(a: i128, b: i128) -> (u128, u128, u128) {
+pub(crate) fn extended_eucledian(a: i128, b: i128) -> (i128, i128, i128) {
     let (mut old_r, mut r) = (a, b);
     let (mut old_s, mut s) = (1, 0);
     let (mut old_t, mut t) = (0, 1);
