@@ -106,7 +106,14 @@ impl PartialEq for I256 {
 
 impl std::cmp::PartialOrd for I256 {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        self.value.partial_cmp(&other.value)
+        for i in (0..4).rev() {
+            match self.value[i].partial_cmp(&other.value[i]) {
+                Some(std::cmp::Ordering::Equal) => continue,
+                Some(ordering) => return Some(ordering),
+                None => return None,
+            }
+        }
+        Some(std::cmp::Ordering::Equal)
     }
 }
 
@@ -294,6 +301,24 @@ mod tests {
         let div = a / b;
         assert_eq!(expected.value, result.value);
         assert_eq!(expected, a - b * div);
+    }
+
+    #[test]
+    fn test_rem_complex() {
+        // Given
+        let a = I256 {
+            value: [0, 0, 4294967296, 0],
+        };
+        let b = I256::from(1 + 407 * 2u128.pow(119));
+
+        // When
+        let result = a % b;
+
+        // Then
+        let expected = I256 {
+            value: [18446744068306546075, 13150510911921848319, 0, 0],
+        };
+        assert_eq!(expected.value, result.value);
     }
 
     #[test]
