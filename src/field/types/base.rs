@@ -27,6 +27,18 @@ impl I256 {
         }
         result
     }
+
+    fn abs(self) -> Self {
+        if self.sign() {
+            -self
+        } else {
+            self
+        }
+    }
+
+    fn sign(&self) -> bool {
+        (self.value[3] & 0x8000000000000000) != 0
+    }
 }
 
 impl ops::Add<I256> for I256 {
@@ -93,9 +105,6 @@ impl ops::Div<I256> for I256 {
         if rhs == Self::ZERO {
             panic!("Division by zero");
         }
-        if rhs > self {
-            return Self::ZERO;
-        }
         let mut numerator = self;
         let mut denominator = rhs;
         div(&mut numerator.value, &mut denominator.value);
@@ -107,8 +116,13 @@ impl ops::Rem<I256> for I256 {
     type Output = Self;
 
     fn rem(self, rhs: Self) -> Self::Output {
-        let div = self / rhs;
-        self - div * rhs
+        let divisor = rhs.abs();
+        let dividend = self.abs();
+        let div = dividend / divisor;
+        if self.sign() {
+            return -(dividend - div * divisor);
+        }
+        self - div * divisor
     }
 }
 
@@ -382,7 +396,7 @@ mod tests {
     }
 
     #[test]
-    fn test_rem() {
+    fn test_rem_simple() {
         // Given
         let a = I256 {
             value: [5, 6, 7, 8],
@@ -416,6 +430,42 @@ mod tests {
 
         // Then
         let expected = I256 {
+            value: [18446744068306546075, 13150510911921848319, 0, 0],
+        };
+        assert_eq!(expected.value, result.value);
+    }
+
+    #[test]
+    fn test_rem_complex_negative_modulus() {
+        // Given
+        let a = I256 {
+            value: [0, 0, 4294967296, 0],
+        };
+        let b = I256::from(1 + 407 * 2u128.pow(119));
+
+        // When
+        let result = a % (-b);
+
+        // Then
+        let expected = I256 {
+            value: [18446744068306546075, 13150510911921848319, 0, 0],
+        };
+        assert_eq!(expected.value, result.value);
+    }
+
+    #[test]
+    fn test_rem_complex_negative_dividend() {
+        // Given
+        let a = I256 {
+            value: [0, 0, 4294967296, 0],
+        };
+        let b = I256::from(1 + 407 * 2u128.pow(119));
+
+        // When
+        let result = (-a) % b;
+
+        // Then
+        let expected = -I256 {
             value: [18446744068306546075, 13150510911921848319, 0, 0],
         };
         assert_eq!(expected.value, result.value);
