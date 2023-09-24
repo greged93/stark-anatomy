@@ -10,11 +10,34 @@ pub struct FieldElement {
 }
 
 impl FieldElement {
+    pub fn zero(prime: u128) -> Self {
+        Self { value: 0, prime }
+    }
+
+    pub fn one(prime: u128) -> Self {
+        Self { value: 1, prime }
+    }
+
     pub fn new(num: u128, prime: u128) -> Self {
         Self {
             value: num % prime,
             prime,
         }
+    }
+
+    pub fn pow(self, exponent: FieldElement) -> Self {
+        let l = I256::from(self.value);
+        let r = I256::from(exponent.value);
+        let prime = I256::from(self.prime);
+
+        let power = l.pow(r);
+        let power = power % prime;
+        let power: u128 = power.into();
+        Self::new(power, self.prime)
+    }
+
+    pub fn is_zero(&self) -> bool {
+        self.value == 0
     }
 }
 
@@ -74,5 +97,25 @@ impl ops::Div<FieldElement> for FieldElement {
         let quotient = quotient % prime;
         let quotient: u128 = quotient.into();
         Self::new(quotient, self.prime)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    const PRIME: u128 = 1 + 407 * 2u128.pow(119);
+
+    #[test]
+    fn test_pow() {
+        // Given
+        let base = FieldElement::new(2, PRIME);
+        let exponent = FieldElement::new(160, PRIME);
+
+        // When
+        let result = base.pow(exponent);
+
+        // Then
+        let expected = 242584109230747146804944788495759879579u128;
+        assert_eq!(expected, result.value);
     }
 }
