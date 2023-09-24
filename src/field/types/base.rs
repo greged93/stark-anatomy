@@ -13,6 +13,20 @@ impl I256 {
     pub const ONE: I256 = I256 {
         value: [1, 0, 0, 0],
     };
+
+    pub fn pow(self, exponent: Self) -> Self {
+        let mut result = Self::ONE;
+        let mut base = self;
+        let mut exp = exponent;
+        while exp > Self::ZERO {
+            if exp % Self::from(2u64) == Self::ONE {
+                result = result * base;
+            }
+            base = base * base;
+            exp = exp / Self::from(2u64);
+        }
+        result
+    }
 }
 
 impl ops::Add<I256> for I256 {
@@ -164,7 +178,24 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_neg_i256() {
+    fn test_pow() {
+        // Given
+        let a = I256 {
+            value: [2, 0, 0, 0],
+        };
+
+        // When
+        let result = a.pow(I256::from(100u64));
+
+        // Then
+        let expected = I256 {
+            value: [0, 68719476736, 0, 0],
+        };
+        assert_eq!(expected.value, result.value);
+    }
+
+    #[test]
+    fn test_neg() {
         // Given
         let a = I256 {
             value: [u64::MAX, u64::MAX, 0, 0],
