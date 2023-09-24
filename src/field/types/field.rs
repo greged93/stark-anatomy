@@ -4,7 +4,7 @@ use crate::field::utils::extended_euclidean;
 
 use super::base::I256;
 
-#[derive(Copy, Clone)]
+#[derive(Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct FieldElement {
     value: u128,
     prime: u128,
