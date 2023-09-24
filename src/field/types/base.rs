@@ -1,14 +1,17 @@
 use ruint::algorithms::div::div;
 use std::ops;
 
-#[derive(Clone)]
-struct I256 {
+#[derive(Clone, Copy, Debug)]
+pub struct I256 {
     value: [u64; 4],
 }
 
 impl I256 {
-    const ZERO: I256 = I256 {
+    pub const ZERO: I256 = I256 {
         value: [0, 0, 0, 0],
+    };
+    pub const ONE: I256 = I256 {
+        value: [1, 0, 0, 0],
     };
 }
 
@@ -69,18 +72,6 @@ impl ops::Mul<I256> for I256 {
     }
 }
 
-impl PartialEq for I256 {
-    fn eq(&self, other: &Self) -> bool {
-        self.value == other.value
-    }
-}
-
-impl std::cmp::PartialOrd for I256 {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        self.value.partial_cmp(&other.value)
-    }
-}
-
 impl ops::Div<I256> for I256 {
     type Output = I256;
 
@@ -95,6 +86,69 @@ impl ops::Div<I256> for I256 {
         let mut denominator = rhs;
         div(&mut numerator.value, &mut denominator.value);
         numerator
+    }
+}
+
+impl ops::Rem<I256> for I256 {
+    type Output = I256;
+
+    fn rem(self, rhs: I256) -> Self::Output {
+        let div = self / rhs;
+        self - div * rhs
+    }
+}
+
+impl PartialEq for I256 {
+    fn eq(&self, other: &Self) -> bool {
+        self.value == other.value
+    }
+}
+
+impl std::cmp::PartialOrd for I256 {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        self.value.partial_cmp(&other.value)
+    }
+}
+
+impl From<u64> for I256 {
+    fn from(num: u64) -> Self {
+        I256 {
+            value: [num, 0, 0, 0],
+        }
+    }
+}
+
+impl From<u128> for I256 {
+    fn from(num: u128) -> Self {
+        I256 {
+            value: [num as u64, (num >> 64) as u64, 0, 0],
+        }
+    }
+}
+
+impl From<I256> for u128 {
+    fn from(num: I256) -> Self {
+        (num.value[1] as u128) << 64 | num.value[0] as u128
+    }
+}
+
+impl From<i64> for I256 {
+    fn from(num: i64) -> Self {
+        if num < 0 {
+            -I256::from(-num as u64)
+        } else {
+            I256::from(num as u64)
+        }
+    }
+}
+
+impl From<i128> for I256 {
+    fn from(num: i128) -> Self {
+        if num < 0 {
+            -I256::from(-num as u128)
+        } else {
+            I256::from(num as u128)
+        }
     }
 }
 
