@@ -120,14 +120,20 @@ impl PartialEq for I256 {
 
 impl std::cmp::PartialOrd for I256 {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        for i in (0..4).rev() {
-            match self.value[i].partial_cmp(&other.value[i]) {
-                Some(std::cmp::Ordering::Equal) => continue,
-                Some(ordering) => return Some(ordering),
-                None => return None,
-            }
+        let l_sign = self.sign();
+        let r_sign = other.sign();
+
+        let mut l = self.abs();
+        l.value.reverse();
+        let mut r = other.abs();
+        r.value.reverse();
+
+        match (l_sign, r_sign) {
+            (true, true) => l.value.partial_cmp(&r.value).map(|x| x.reverse()),
+            (true, false) => Some(std::cmp::Ordering::Less),
+            (false, true) => Some(std::cmp::Ordering::Greater),
+            (false, false) => l.value.partial_cmp(&r.value),
         }
-        Some(std::cmp::Ordering::Equal)
     }
 }
 
@@ -272,7 +278,7 @@ mod tests {
     }
 
     #[test]
-    fn test_compare() {
+    fn test_compare_pos_pos() {
         // Given
         let a = I256 {
             value: [1, 2, 3, 4],
@@ -285,6 +291,69 @@ mod tests {
         let result1 = a < b;
         let result2 = a > b;
         let result3 = b == b;
+
+        // Then
+        assert!(result1);
+        assert!(!result2);
+        assert!(result3);
+    }
+
+    #[test]
+    fn test_compare_pos_neg() {
+        // Given
+        let a = I256 {
+            value: [1, 2, 3, 4],
+        };
+        let b = -I256 {
+            value: [5, 6, 7, 8],
+        };
+
+        // When
+        let result1 = a > b;
+        let result2 = a < b;
+        let result3 = b.eq(&b);
+
+        // Then
+        assert!(result1);
+        assert!(!result2);
+        assert!(result3);
+    }
+
+    #[test]
+    fn test_compare_neg_pos() {
+        // Given
+        let a = -I256 {
+            value: [1, 2, 3, 4],
+        };
+        let b = I256 {
+            value: [5, 6, 7, 8],
+        };
+
+        // When
+        let result1 = a < b;
+        let result2 = a > b;
+        let result3 = b.eq(&b);
+
+        // Then
+        assert!(result1);
+        assert!(!result2);
+        assert!(result3);
+    }
+
+    #[test]
+    fn test_compare_neg_neg() {
+        // Given
+        let a = -I256 {
+            value: [1, 2, 3, 4],
+        };
+        let b = -I256 {
+            value: [5, 6, 7, 8],
+        };
+
+        // When
+        let result1 = a > b;
+        let result2 = a < b;
+        let result3 = b.eq(&b);
 
         // Then
         assert!(result1);
