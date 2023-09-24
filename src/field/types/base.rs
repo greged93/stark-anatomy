@@ -268,5 +268,106 @@ mod tests {
         let result = a / b;
 
         // Then
+        let expected = I256 {
+            value: [2, 0, 0, 0],
+        };
+        assert_eq!(expected.value, result.value);
+    }
+
+    #[test]
+    fn test_rem() {
+        // Given
+        let a = I256 {
+            value: [5, 6, 7, 8],
+        };
+        let b = I256 {
+            value: [1, 2, 3, 4],
+        };
+
+        // When
+        let result = a % b;
+
+        // Then
+        let expected = I256 {
+            value: [3, 2, 1, 0],
+        };
+        let div = a / b;
+        assert_eq!(expected.value, result.value);
+        assert_eq!(expected, a - b * div);
+    }
+
+    #[test]
+    fn test_from_u64() {
+        // Given
+        let a = 5u64;
+
+        // When
+        let result = I256::from(a);
+
+        // Then
+        let expected = I256 {
+            value: [5, 0, 0, 0],
+        };
+        assert_eq!(expected.value, result.value);
+    }
+
+    #[test]
+    fn test_from_u128() {
+        // Given
+        let a = u64::MAX as u128 + 2;
+
+        // When
+        let result = I256::from(a);
+
+        // Then
+        let expected = I256 {
+            value: [1, 1, 0, 0],
+        };
+        assert_eq!(expected.value, result.value);
+    }
+
+    #[test]
+    fn test_from_i256_to_u128() {
+        // Given
+        let a = I256 {
+            value: [u64::MAX, u64::MAX, 0, 0],
+        };
+
+        // When
+        let result = u128::from(a);
+
+        // Then
+        let expected = u128::MAX;
+        assert_eq!(expected, result);
+    }
+
+    #[test]
+    fn test_from_i64() {
+        // Given
+        let a = -5i64;
+
+        // When
+        let result = I256::from(a);
+
+        // Then
+        let expected = -I256 {
+            value: [5, 0, 0, 0],
+        };
+        assert_eq!(expected.value, result.value);
+    }
+
+    #[test]
+    fn test_from_i128() {
+        // Given
+        let a = -(u64::MAX as i128 + 2);
+
+        // When
+        let result = I256::from(a);
+
+        // Then
+        let expected = -I256 {
+            value: [1, 1, 0, 0],
+        };
+        assert_eq!(expected.value, result.value);
     }
 }
