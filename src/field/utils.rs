@@ -1,7 +1,9 @@
-pub(crate) fn extended_eucledian(a: i128, b: i128) -> (i128, i128, i128) {
+use crate::field::types::base::I256;
+
+pub(crate) fn extended_eucledian(a: I256, b: I256) -> (I256, I256, I256) {
     let (mut old_r, mut r) = (a, b);
-    let (mut old_s, mut s) = (1, 0);
-    let (mut old_t, mut t) = (0, 1);
+    let (mut old_s, mut s) = (I256::ONE, I256::ZERO);
+    let (mut old_t, mut t) = (I256::ZERO, I256::ONE);
 
     loop {
         let q = old_r / r;
@@ -9,7 +11,7 @@ pub(crate) fn extended_eucledian(a: i128, b: i128) -> (i128, i128, i128) {
         (old_r, r) = (r, old_r - q * r);
         (old_s, s) = (s, old_s - q * s);
         (old_t, t) = (t, old_t - q * t);
-        if r == 0 {
+        if r == I256::ZERO {
             return (old_r, old_s, old_t);
         }
     }
@@ -20,17 +22,32 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_extended_eucledian() {
+    fn test_basic_extended_eucledian() {
         // Given
-        let a = 240;
-        let b = 46;
+        let a = I256::from(240u64);
+        let b = I256::from(46u64);
 
         // When
         let (g, s, t) = extended_eucledian(a, b);
 
         // Then
-        assert_eq!(g, 2);
-        assert_eq!(s, -9);
-        assert_eq!(t, 47);
+        assert_eq!(g, I256::from(2u64));
+        assert_eq!(s, I256::from(-9i64));
+        assert_eq!(t, I256::from(47u64));
+    }
+
+    #[test]
+    fn test_complex_extended_eucledian() {
+        // Given
+        let a = I256::from(6543211245u64);
+        let b = I256::from(123456785u64);
+
+        // When
+        let (g, s, t) = extended_eucledian(a, b);
+
+        // Then
+        assert_eq!(g, I256::from(5u64));
+        assert_eq!(s, I256::from(6850346u64));
+        assert_eq!(t, I256::from(-363068429i64));
     }
 }
