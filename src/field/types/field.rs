@@ -63,7 +63,7 @@ impl ops::Sub<FieldElement> for FieldElement {
         let prime = I256::from(self.prime);
 
         let diff = l - r;
-        let diff = diff % prime;
+        let diff = (diff + prime) % prime;
         let diff: u128 = diff.into();
         Self::new(diff, self.prime)
     }
@@ -117,5 +117,33 @@ mod tests {
         // Then
         let expected = 242584109230747146804944788495759879579u128;
         assert_eq!(expected, result.value);
+    }
+
+    #[test]
+    fn test_add() {
+        // Given
+        let a = FieldElement::new(PRIME - 10, PRIME);
+        let b = FieldElement::new(12, PRIME);
+
+        // When
+        let result = a + b;
+
+        // Then
+        let expected = FieldElement::new(2, PRIME);
+        assert_eq!(expected.value, result.value);
+    }
+
+    #[test]
+    fn test_sub() {
+        // Given
+        let a = FieldElement::new(0, PRIME);
+        let b = FieldElement::new(12, PRIME);
+
+        // When
+        let result = a - b;
+
+        // Then
+        let expected = FieldElement::new(PRIME - 12, PRIME);
+        assert_eq!(expected.value, result.value);
     }
 }
