@@ -16,9 +16,9 @@ impl I256 {
 }
 
 impl ops::Add<I256> for I256 {
-    type Output = I256;
+    type Output = Self;
 
-    fn add(self, rhs: I256) -> Self::Output {
+    fn add(self, rhs: Self) -> Self::Output {
         let mut result = [0u64; 4];
         let mut carry = 0u64;
         for (i, v) in self.value.into_iter().enumerate() {
@@ -27,20 +27,20 @@ impl ops::Add<I256> for I256 {
             result[i] = sum;
             carry = carry1 as u64 + carry2 as u64;
         }
-        I256 { value: result }
+        Self { value: result }
     }
 }
 
 impl ops::Sub<I256> for I256 {
-    type Output = I256;
+    type Output = Self;
 
-    fn sub(self, rhs: I256) -> Self::Output {
+    fn sub(self, rhs: Self) -> Self::Output {
         self + (-rhs)
     }
 }
 
 impl ops::Neg for I256 {
-    type Output = I256;
+    type Output = Self;
 
     fn neg(self) -> Self::Output {
         let mut signed = self;
@@ -53,9 +53,9 @@ impl ops::Neg for I256 {
 }
 
 impl ops::Mul<I256> for I256 {
-    type Output = I256;
+    type Output = Self;
 
-    fn mul(self, rhs: I256) -> Self::Output {
+    fn mul(self, rhs: Self) -> Self::Output {
         let mut result = [0u64; 9];
         for (i, v) in self.value.iter().enumerate() {
             for (j, w) in rhs.value.iter().enumerate() {
@@ -66,21 +66,21 @@ impl ops::Mul<I256> for I256 {
                 result[i + j + 1] += high as u64;
             }
         }
-        I256 {
+        Self {
             value: [result[0], result[1], result[2], result[3]],
         }
     }
 }
 
 impl ops::Div<I256> for I256 {
-    type Output = I256;
+    type Output = Self;
 
-    fn div(self, rhs: I256) -> Self::Output {
-        if rhs == I256::ZERO {
+    fn div(self, rhs: Self) -> Self::Output {
+        if rhs == Self::ZERO {
             panic!("Division by zero");
         }
         if rhs > self {
-            return I256::ZERO;
+            return Self::ZERO;
         }
         let mut numerator = self;
         let mut denominator = rhs;
@@ -90,9 +90,9 @@ impl ops::Div<I256> for I256 {
 }
 
 impl ops::Rem<I256> for I256 {
-    type Output = I256;
+    type Output = Self;
 
-    fn rem(self, rhs: I256) -> Self::Output {
+    fn rem(self, rhs: Self) -> Self::Output {
         let div = self / rhs;
         self - div * rhs
     }
@@ -112,7 +112,7 @@ impl std::cmp::PartialOrd for I256 {
 
 impl From<u64> for I256 {
     fn from(num: u64) -> Self {
-        I256 {
+        Self {
             value: [num, 0, 0, 0],
         }
     }
@@ -120,7 +120,7 @@ impl From<u64> for I256 {
 
 impl From<u128> for I256 {
     fn from(num: u128) -> Self {
-        I256 {
+        Self {
             value: [num as u64, (num >> 64) as u64, 0, 0],
         }
     }
@@ -135,9 +135,9 @@ impl From<I256> for u128 {
 impl From<i64> for I256 {
     fn from(num: i64) -> Self {
         if num < 0 {
-            -I256::from(-num as u64)
+            -Self::from(-num as u64)
         } else {
-            I256::from(num as u64)
+            Self::from(num as u64)
         }
     }
 }
@@ -145,9 +145,9 @@ impl From<i64> for I256 {
 impl From<i128> for I256 {
     fn from(num: i128) -> Self {
         if num < 0 {
-            -I256::from(-num as u128)
+            -Self::from(-num as u128)
         } else {
-            I256::from(num as u128)
+            Self::from(num as u128)
         }
     }
 }
