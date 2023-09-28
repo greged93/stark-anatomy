@@ -1,6 +1,6 @@
 use crate::field::types::base::I256;
 
-pub(crate) fn extended_eucledian(a: I256, b: I256) -> (I256, I256, I256) {
+pub(crate) fn extended_euclidean(a: I256, b: I256) -> (I256, I256, I256) {
     let (mut old_r, mut r) = (a, b);
     let (mut old_s, mut s) = (I256::ONE, I256::ZERO);
     let (mut old_t, mut t) = (I256::ZERO, I256::ONE);
@@ -28,7 +28,7 @@ mod tests {
         let b = I256::from(46u64);
 
         // When
-        let (g, s, t) = extended_eucledian(a, b);
+        let (g, s, t) = extended_euclidean(a, b);
 
         // Then
         assert_eq!(g, I256::from(2u64));
@@ -43,7 +43,7 @@ mod tests {
         let b = I256::from(123456785u64);
 
         // When
-        let (g, s, t) = extended_eucledian(a, b);
+        let (g, s, t) = extended_euclidean(a, b);
 
         // Then
         assert_eq!(g, I256::from(5u64));
