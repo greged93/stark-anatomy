@@ -1,9 +1,10 @@
 use std::ops;
 
-use crate::field::utils::extended_eucledian;
+use crate::field::utils::extended_euclidean;
 
 use super::base::I256;
 
+#[derive(Copy, Clone)]
 pub struct FieldElement {
     value: u128,
     prime: u128,
@@ -39,6 +40,10 @@ impl FieldElement {
     pub fn is_zero(&self) -> bool {
         self.value == 0
     }
+
+    pub fn value(self) -> u128 {
+        self.value
+    }
 }
 
 impl ops::Add<FieldElement> for FieldElement {
@@ -47,10 +52,10 @@ impl ops::Add<FieldElement> for FieldElement {
     fn add(self, rhs: FieldElement) -> Self::Output {
         let l = I256::from(self.value);
         let r = I256::from(rhs.value);
+        let prime = I256::from(self.prime);
 
-        let sum = l + r;
-        let sum: u128 = sum.into();
-        Self::new(sum, self.prime)
+        let sum = (l + r) % prime;
+        Self::new(sum.into(), self.prime)
     }
 }
 
@@ -64,8 +69,7 @@ impl ops::Sub<FieldElement> for FieldElement {
 
         let diff = l - r;
         let diff = (diff + prime) % prime;
-        let diff: u128 = diff.into();
-        Self::new(diff, self.prime)
+        Self::new(diff.into(), self.prime)
     }
 }
 
@@ -77,10 +81,8 @@ impl ops::Mul<FieldElement> for FieldElement {
         let r = I256::from(rhs.value);
         let prime = I256::from(self.prime);
 
-        let product = l * r;
-        let product = product % prime;
-        let product: u128 = product.into();
-        Self::new(product, self.prime)
+        let product = (l * r) % prime;
+        Self::new(product.into(), self.prime)
     }
 }
 
@@ -88,15 +90,16 @@ impl ops::Div<FieldElement> for FieldElement {
     type Output = FieldElement;
 
     fn div(self, rhs: FieldElement) -> Self::Output {
+        if rhs.is_zero() {
+            panic!("Cannot divide by zero");
+        }
         let l = I256::from(self.value);
         let r = I256::from(rhs.value);
         let prime = I256::from(self.prime);
 
-        let (inverse, _, _) = extended_eucledian(r, prime);
-        let quotient = l * inverse;
-        let quotient = quotient % prime;
-        let quotient: u128 = quotient.into();
-        Self::new(quotient, self.prime)
+        let (_, inverse, _) = extended_euclidean(r, prime);
+        let quotient = (l * inverse) % prime;
+        Self::new(quotient.into(), self.prime)
     }
 }
 
@@ -145,5 +148,33 @@ mod tests {
         // Then
         let expected = FieldElement::new(PRIME - 12, PRIME);
         assert_eq!(expected.value, result.value);
+    }
+
+    #[test]
+    fn test_mul() {
+        // Given
+        let a = FieldElement::new(u64::MAX as u128 - 2, PRIME);
+        let b = FieldElement::new(u64::MAX as u128 - 1, PRIME);
+
+        // When
+        let result = a * b;
+
+        // Then
+        let expected = FieldElement::new(69784469778708083235216150296170332165, PRIME);
+        assert_eq!(expected.value, result.value);
+    }
+
+    #[test]
+    fn test_div() {
+        // Given
+        let a = FieldElement::new(u64::MAX as u128 - 2, PRIME);
+        let b = FieldElement::new(u64::MAX as u128 - 1, PRIME);
+
+        // When
+        let result = a / b;
+
+        // Then
+        let expected = FieldElement::new(263166645724356846472197722797662682189, PRIME);
+        assert_eq!(expected.value, result.value)
     }
 }

@@ -83,13 +83,15 @@ impl ops::Mul<I256> for I256 {
 
     fn mul(self, rhs: Self) -> Self::Output {
         let mut result = [0u64; 9];
+        let mut carry = false;
         for (i, v) in self.value.iter().enumerate() {
             for (j, w) in rhs.value.iter().enumerate() {
                 let product = *v as u128 * *w as u128;
                 let low = product & 0xffffffffffffffff;
                 let high = product >> 64;
-                result[i + j] += low as u64;
-                result[i + j + 1] += high as u64;
+                (result[i + j], carry) = result[i + j].overflowing_add(low as u64 + carry as u64);
+                (result[i + j + 1], carry) =
+                    result[i + j + 1].overflowing_add(high as u64 + carry as u64);
             }
         }
         Self {
