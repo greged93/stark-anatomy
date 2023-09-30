@@ -739,6 +739,7 @@ name = "stark-anat"
 version = "0.1.0"
 dependencies = [
  "eyre",
+ "itertools",
  "ruint",
 ]
 
