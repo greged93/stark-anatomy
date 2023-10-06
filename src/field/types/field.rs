@@ -10,36 +10,23 @@ pub struct FieldElement {
     prime: u128,
 }
 
+// `PRIME` is the expression `1 + 407 * 2u128.pow(119)` evaluated
+// see: https://github.com/aszepieniec/stark-anatomy/blob/76c375505a28e7f02f8803f77f8d7620d834071d/docs/basic-tools.md?plain=1#L113-L119
+const PRIME: u128 = 270497897142230380135924736767050121217;
+const ZERO: FieldElement = FieldElement {
+    value: 0,
+    prime: PRIME,
+};
+const ONE: FieldElement = FieldElement {
+    value: 1,
+    prime: PRIME,
+};
+
 impl FieldElement {
-    // see: https://github.com/aszepieniec/stark-anatomy/blob/76c375505a28e7f02f8803f77f8d7620d834071d/docs/basic-tools.md?plain=1#L113-L119
-    pub const fn prime_modulus() -> u128 {
-        1 + 407 * 2u128.pow(119)
-    }
-
-    pub fn zero() -> Self {
-        Self::with_prime(0, Self::prime_modulus())
-    }
-
-    pub fn one() -> Self {
-        Self::with_prime(1, Self::prime_modulus())
-    }
-
-    pub fn zero_with_prime(prime: u128) -> Self {
-        Self::with_prime(0, prime)
-    }
-
-    pub fn one_with_prime(prime: u128) -> Self {
-        Self::with_prime(1, prime)
-    }
-
     pub fn new(num: u128) -> Self {
-        Self::with_prime(num, Self::prime_modulus())
-    }
-
-    pub fn with_prime(num: u128, prime: u128) -> Self {
         Self {
-            value: num % prime,
-            prime,
+            value: num % PRIME,
+            prime: PRIME,
         }
     }
 
@@ -51,7 +38,7 @@ impl FieldElement {
         let power = l.pow(r);
         let power = power % prime;
         let power: u128 = power.into();
-        Self::with_prime(power, self.prime)
+        Self::new(power)
     }
 
     pub fn is_zero(&self) -> bool {
@@ -72,7 +59,7 @@ impl ops::Add<FieldElement> for FieldElement {
         let prime = I256::from(self.prime);
 
         let sum = (l + r) % prime;
-        Self::with_prime(sum.into(), self.prime)
+        Self::new(sum.into())
     }
 }
 
@@ -86,7 +73,7 @@ impl ops::Sub<FieldElement> for FieldElement {
 
         let diff = l - r;
         let diff = (diff + prime) % prime;
-        Self::with_prime(diff.into(), self.prime)
+        Self::new(diff.into())
     }
 }
 
@@ -99,7 +86,7 @@ impl ops::Mul<FieldElement> for FieldElement {
         let prime = I256::from(self.prime);
 
         let product = (l * r) % prime;
-        Self::with_prime(product.into(), self.prime)
+        Self::new(product.into())
     }
 }
 
@@ -110,20 +97,20 @@ impl ops::Div<FieldElement> for FieldElement {
         if rhs.is_zero() {
             panic!("Cannot divide by zero");
         }
+
         let l = I256::from(self.value);
         let r = I256::from(rhs.value);
         let prime = I256::from(self.prime);
 
         let (_, inverse, _) = extended_euclidean(r, prime);
         let quotient = (l * inverse) % prime;
-        Self::with_prime(quotient.into(), self.prime)
+        Self::new(quotient.into())
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    const PRIME: u128 = FieldElement::prime_modulus();
 
     #[test]
     fn test_pow() {
@@ -157,7 +144,7 @@ mod tests {
     #[test]
     fn test_sub() {
         // Given
-        let a = FieldElement::zero();
+        let a = ZERO;
         let b = FieldElement::new(12);
 
         // When
