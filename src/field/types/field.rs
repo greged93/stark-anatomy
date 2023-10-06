@@ -10,19 +10,23 @@ pub struct FieldElement {
     prime: u128,
 }
 
+// `PRIME` is the expression `1 + 407 * 2u128.pow(119)` evaluated
+// see: https://github.com/aszepieniec/stark-anatomy/blob/76c375505a28e7f02f8803f77f8d7620d834071d/docs/basic-tools.md?plain=1#L113-L119
+const PRIME: u128 = 270497897142230380135924736767050121217;
+const ZERO: FieldElement = FieldElement {
+    value: 0,
+    prime: PRIME,
+};
+const ONE: FieldElement = FieldElement {
+    value: 1,
+    prime: PRIME,
+};
+
 impl FieldElement {
-    pub fn zero(prime: u128) -> Self {
-        Self { value: 0, prime }
-    }
-
-    pub fn one(prime: u128) -> Self {
-        Self { value: 1, prime }
-    }
-
-    pub fn new(num: u128, prime: u128) -> Self {
+    pub fn new(num: u128) -> Self {
         Self {
-            value: num % prime,
-            prime,
+            value: num % PRIME,
+            prime: PRIME,
         }
     }
 
@@ -34,7 +38,7 @@ impl FieldElement {
         let power = l.pow(r);
         let power = power % prime;
         let power: u128 = power.into();
-        Self::new(power, self.prime)
+        Self::new(power)
     }
 
     pub fn is_zero(&self) -> bool {
@@ -55,7 +59,7 @@ impl ops::Add<FieldElement> for FieldElement {
         let prime = I256::from(self.prime);
 
         let sum = (l + r) % prime;
-        Self::new(sum.into(), self.prime)
+        Self::new(sum.into())
     }
 }
 
@@ -69,7 +73,7 @@ impl ops::Sub<FieldElement> for FieldElement {
 
         let diff = l - r;
         let diff = (diff + prime) % prime;
-        Self::new(diff.into(), self.prime)
+        Self::new(diff.into())
     }
 }
 
@@ -82,7 +86,7 @@ impl ops::Mul<FieldElement> for FieldElement {
         let prime = I256::from(self.prime);
 
         let product = (l * r) % prime;
-        Self::new(product.into(), self.prime)
+        Self::new(product.into())
     }
 }
 
@@ -93,26 +97,26 @@ impl ops::Div<FieldElement> for FieldElement {
         if rhs.is_zero() {
             panic!("Cannot divide by zero");
         }
+
         let l = I256::from(self.value);
         let r = I256::from(rhs.value);
         let prime = I256::from(self.prime);
 
         let (_, inverse, _) = extended_euclidean(r, prime);
         let quotient = (l * inverse) % prime;
-        Self::new(quotient.into(), self.prime)
+        Self::new(quotient.into())
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    const PRIME: u128 = 1 + 407 * 2u128.pow(119);
 
     #[test]
     fn test_pow() {
         // Given
-        let base = FieldElement::new(2, PRIME);
-        let exponent = FieldElement::new(160, PRIME);
+        let base = FieldElement::new(2);
+        let exponent = FieldElement::new(160);
 
         // When
         let result = base.pow(exponent);
@@ -125,56 +129,57 @@ mod tests {
     #[test]
     fn test_add() {
         // Given
-        let a = FieldElement::new(PRIME - 10, PRIME);
-        let b = FieldElement::new(12, PRIME);
+
+        let a = FieldElement::new(PRIME - 10);
+        let b = FieldElement::new(12);
 
         // When
         let result = a + b;
 
         // Then
-        let expected = FieldElement::new(2, PRIME);
+        let expected = FieldElement::new(2);
         assert_eq!(expected.value, result.value);
     }
 
     #[test]
     fn test_sub() {
         // Given
-        let a = FieldElement::new(0, PRIME);
-        let b = FieldElement::new(12, PRIME);
+        let a = ZERO;
+        let b = FieldElement::new(12);
 
         // When
         let result = a - b;
 
         // Then
-        let expected = FieldElement::new(PRIME - 12, PRIME);
+        let expected = FieldElement::new(PRIME - 12);
         assert_eq!(expected.value, result.value);
     }
 
     #[test]
     fn test_mul() {
         // Given
-        let a = FieldElement::new(u64::MAX as u128 - 2, PRIME);
-        let b = FieldElement::new(u64::MAX as u128 - 1, PRIME);
+        let a = FieldElement::new(u64::MAX as u128 - 2);
+        let b = FieldElement::new(u64::MAX as u128 - 1);
 
         // When
         let result = a * b;
 
         // Then
-        let expected = FieldElement::new(69784469778708083235216150296170332165, PRIME);
+        let expected = FieldElement::new(69784469778708083235216150296170332165);
         assert_eq!(expected.value, result.value);
     }
 
     #[test]
     fn test_div() {
         // Given
-        let a = FieldElement::new(u64::MAX as u128 - 2, PRIME);
-        let b = FieldElement::new(u64::MAX as u128 - 1, PRIME);
+        let a = FieldElement::new(u64::MAX as u128 - 2);
+        let b = FieldElement::new(u64::MAX as u128 - 1);
 
         // When
         let result = a / b;
 
         // Then
-        let expected = FieldElement::new(263166645724356846472197722797662682189, PRIME);
+        let expected = FieldElement::new(263166645724356846472197722797662682189);
         assert_eq!(expected.value, result.value)
     }
 }
