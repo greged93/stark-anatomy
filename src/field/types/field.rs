@@ -13,10 +13,14 @@ pub struct FieldElement {
 // `PRIME` is the expression `1 + 407 * 2u128.pow(119)` evaluated
 // see: https://github.com/aszepieniec/stark-anatomy/blob/76c375505a28e7f02f8803f77f8d7620d834071d/docs/basic-tools.md?plain=1#L113-L119
 const PRIME: u128 = 270497897142230380135924736767050121217;
+
+#[allow(dead_code)]
 const ZERO: FieldElement = FieldElement {
     value: 0,
     prime: PRIME,
 };
+
+#[allow(dead_code)]
 const ONE: FieldElement = FieldElement {
     value: 1,
     prime: PRIME,
