@@ -1,6 +1,6 @@
 use std::ops;
 
-use crate::field::utils::extended_euclidean;
+use crate::field::utils::{extended_euclidean, multiplicative_inverse};
 
 use super::base::I256;
 
@@ -12,19 +12,22 @@ pub struct FieldElement {
 
 // `PRIME` is the expression `1 + 407 * 2u128.pow(119)` evaluated
 // see: https://github.com/aszepieniec/stark-anatomy/blob/76c375505a28e7f02f8803f77f8d7620d834071d/docs/basic-tools.md?plain=1#L113-L119
-const PRIME: u128 = 270497897142230380135924736767050121217;
+pub const PRIME: u128 = 270497897142230380135924736767050121217;
 
-#[allow(dead_code)]
-const ZERO: FieldElement = FieldElement {
-    value: 0,
-    prime: PRIME,
-};
+// Macro to define FieldElement constants using the prime defined in `stark anatomy` tutorial
+#[macro_export]
+macro_rules! felt {
+    ($value:expr) => {
+        FieldElement {
+            value: $value,
+            prime: crate::field::types::field::PRIME,
+        }
+    };
+}
 
-#[allow(dead_code)]
-const ONE: FieldElement = FieldElement {
-    value: 1,
-    prime: PRIME,
-};
+// Define the constants using the macro
+const ZERO: FieldElement = felt!(0);
+const ONE: FieldElement = felt!(1);
 
 impl FieldElement {
     pub fn new(num: u128) -> Self {
@@ -47,6 +50,15 @@ impl FieldElement {
 
     pub fn is_zero(&self) -> bool {
         self.value == 0
+    }
+
+    pub fn inverse(&self) -> Option<Self> {
+        let r = I256::from(self.value);
+        let prime = I256::from(self.prime);
+
+        let inverse = multiplicative_inverse(r, prime)?;
+
+        Some(Self::new(inverse.into()))
     }
 
     pub fn value(self) -> u128 {
@@ -90,6 +102,7 @@ impl ops::Mul<FieldElement> for FieldElement {
         let prime = I256::from(self.prime);
 
         let product = (l * r) % prime;
+
         Self::new(product.into())
     }
 }
@@ -119,8 +132,8 @@ mod tests {
     #[test]
     fn test_pow() {
         // Given
-        let base = FieldElement::new(2);
-        let exponent = FieldElement::new(160);
+        let base = felt!(2);
+        let exponent = felt!(160);
 
         // When
         let result = base.pow(exponent);
@@ -134,8 +147,8 @@ mod tests {
     fn test_add() {
         // Given
 
-        let a = FieldElement::new(PRIME - 10);
-        let b = FieldElement::new(12);
+        let a = felt!(PRIME - 10);
+        let b = felt!(12);
 
         // When
         let result = a + b;
@@ -149,41 +162,107 @@ mod tests {
     fn test_sub() {
         // Given
         let a = ZERO;
-        let b = FieldElement::new(12);
+        let b = felt!(12);
 
         // When
         let result = a - b;
 
         // Then
-        let expected = FieldElement::new(PRIME - 12);
+        let expected = felt!(PRIME - 12);
         assert_eq!(expected.value, result.value);
     }
 
     #[test]
     fn test_mul() {
         // Given
-        let a = FieldElement::new(u64::MAX as u128 - 2);
-        let b = FieldElement::new(u64::MAX as u128 - 1);
+        let a = felt!(u64::MAX as u128 - 2);
+        let b = felt!(u64::MAX as u128 - 1);
 
         // When
         let result = a * b;
 
         // Then
-        let expected = FieldElement::new(69784469778708083235216150296170332165);
+        let expected = felt!(69784469778708083235216150296170332165);
         assert_eq!(expected.value, result.value);
     }
 
     #[test]
     fn test_div() {
         // Given
-        let a = FieldElement::new(u64::MAX as u128 - 2);
-        let b = FieldElement::new(u64::MAX as u128 - 1);
+        let a = felt!(u64::MAX as u128 - 2);
+        let b = felt!(u64::MAX as u128 - 1);
 
         // When
         let result = a / b;
 
         // Then
-        let expected = FieldElement::new(263166645724356846472197722797662682189);
+        let expected = felt!(263166645724356846472197722797662682189);
         assert_eq!(expected.value, result.value)
+    }
+
+    #[test]
+    fn test_inverse_of_negative_one() {
+        // Given
+        let a = felt!(PRIME - 1);
+        // In modular arithmetic with respect to a prime, "prime - 1" is equivalent to "-1".
+        // Explanation:
+        // In modular arithmetic, two numbers are considered equivalent if their difference is a multiple of the modulus (in this case, PRIME).
+        // For the number 1 and the number "prime - 1", their difference is PRIME itself, which is a multiple of PRIME.
+        // Therefore, adding "prime - 1" (which is equivalent to subtracting 1) to any number modulo PRIME has the same effect as subtracting 1 from that number.
+        // This makes "prime - 1" act as the additive inverse of 1, which is why it is equivalent to "-1".
+
+        // When
+        let inverse = a.inverse();
+
+        // Then
+        assert!(inverse.is_some()); // Ensure the inverse exists
+        assert_eq!(PRIME - 1, inverse.unwrap().value());
+
+        let product = a * inverse.unwrap();
+        // Multiplying (PRIME - 1) * (PRIME - 1) can potentially result in a multiplication overflow
+        // since the resulting value is just one less than PRIME squared. If not handled correctly,
+        // this can produce erroneous results. In modular arithmetic, the correct result should be
+        // (PRIME - 1) * (PRIME - 1) ≡ 1 (mod PRIME).
+        assert_eq!(ONE.value, product.value);
+    }
+
+    #[test]
+    fn test_inverse_of_one() {
+        // Given
+        let a = ONE;
+
+        // When
+        let inverse = a.inverse();
+
+        // Then
+        assert_eq!(ONE.value, inverse.unwrap().value); // The inverse of 1 mod any number is 1
+    }
+
+    #[test]
+    fn test_inverse_near_half_prime() {
+        // Given
+        let a = felt!(PRIME / 2);
+
+        // When
+        let inverse = a.inverse();
+
+        // Then
+        assert!(inverse.is_some()); // Ensure the inverse exists
+
+        // When multiplied by its inverse, it should return ONE modulo PRIME
+        let product = a * inverse.unwrap();
+        assert_eq!(ONE.value, product.value);
+    }
+
+    #[test]
+    fn test_no_inverse_for_zero() {
+        // Given
+        let a = ZERO;
+
+        // When
+        let inverse = a.inverse();
+
+        // Then
+        assert!(inverse.is_none()); // 0 shouldn't have a multiplicative inverse in this field
     }
 }
