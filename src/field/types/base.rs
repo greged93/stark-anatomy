@@ -643,4 +643,74 @@ mod tests {
         };
         assert_eq!(expected.value, result.value);
     }
+
+    #[test]
+    fn test_multiplication_near_boundary() {
+        // `PRIME` is the expression `1 + 407 * 2u128.pow(119)` evaluated
+        // see: https://github.com/aszepieniec/stark-anatomy/blob/76c375505a28e7f02f8803f77f8d7620d834071d/docs/basic-tools.md?plain=1#L113-L119
+        //
+        // This test is essential for ensuring the robustness and correctness of our multiplication
+        // implementation, especially when values approach the maximum representable in the I256 type.
+        //
+        // In many cryptographic contexts, especially those that use modular arithmetic (like STARKs),
+        // operations involving numbers near the modulus (in this case, PRIME) are common. This test
+        // simulates a "worst-case scenario" where two values just shy of the modulus are multiplied
+        // together. The results of such multiplications can potentially overflow the I256 type.
+        //
+        // Two things are being checked here:
+        // 1. That the raw multiplication (without considering any modulus) is correct. This checks
+        //    if the system handles potential overflows correctly. The result is compared against a
+        //    saturating multiplication to ensure no unintended wrap-around occurs.
+        // 2. That the multiplication result modulo PRIME is as expected. In modular arithmetic,
+        //    multiplying two numbers both equal to (PRIME - 1) should yield a result of 1 when taken modulo PRIME.
+        //
+        // Ensuring correctness for this boundary condition is crucial for the overall reliability of
+        // any system built on top of this arithmetic foundation.
+
+        // Given the boundary condition where PRIME is close to the maximum value for I256.
+        let prime = 270497897142230380135924736767050121217_u128;
+        let prime_minus_one = prime - 1_u128;
+        let near_boundary = I256::from(prime_minus_one);
+
+        // When
+        let result = near_boundary * near_boundary;
+
+        // Then
+        // Expected result computation depends on the desired behavior.
+        let expected_value = I256::from((prime_minus_one).saturating_mul(prime_minus_one));
+        let mod_prime = expected_value % I256::from(prime);
+
+        assert_eq!(expected_value, result);
+        assert_eq!(I256::ONE, mod_prime);
+    }
+
+    #[test]
+    fn test_specific_values_multiplication() {
+        // Given the context where we have identified specific values of interest.
+        let prime = 270497897142230380135924736767050121217_u128;
+        let value1 = I256::from(1_u128);
+        let value2 = I256::from(200713427363522296808474866102332030979_u128);
+
+        // When
+        let result = value1 * value2;
+
+        // Then
+        // Expected result without modular arithmetic should be value2 itself.
+        let expected_value = value2;
+        let mod_prime = result % I256::from(prime);
+
+        // Asserting multiplication result
+        assert_eq!(
+            expected_value, result,
+            "Expected the multiplication of 1 with any value to be the value itself."
+        );
+
+        // Asserting modular arithmetic result
+        // Multiplying 1 by any value modulo prime should give the value itself modulo prime.
+        let expected_mod_prime = value2 % I256::from(prime);
+        assert_eq!(
+            expected_mod_prime, mod_prime,
+            "Expected the modulo result to be consistent with basic modular arithmetic rules."
+        );
+    }
 }
