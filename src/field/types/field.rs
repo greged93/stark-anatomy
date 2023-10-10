@@ -1,30 +1,33 @@
 use std::ops;
 
-use crate::field::utils::extended_euclidean;
+use crate::field::utils::{extended_euclidean, multiplicative_inverse};
 
 use super::base::I320;
 
 #[derive(Copy, Clone, Debug)]
 pub struct FieldElement {
-    value: u128,
-    prime: u128,
+    pub value: u128,
+    pub prime: u128,
 }
 
 // `PRIME` is the expression `1 + 407 * 2u128.pow(119)` evaluated
 // see: https://github.com/aszepieniec/stark-anatomy/blob/76c375505a28e7f02f8803f77f8d7620d834071d/docs/basic-tools.md?plain=1#L113-L119
-const PRIME: u128 = 270497897142230380135924736767050121217;
+pub const PRIME: u128 = 270497897142230380135924736767050121217;
 
-#[allow(dead_code)]
-const ZERO: FieldElement = FieldElement {
-    value: 0,
-    prime: PRIME,
-};
+// Macro to define FieldElement constants
+#[macro_export]
+macro_rules! felt {
+    ($value:expr) => {
+        FieldElement {
+            value: $value,
+            prime: crate::field::types::field::PRIME,
+        }
+    };
+}
 
-#[allow(dead_code)]
-const ONE: FieldElement = FieldElement {
-    value: 1,
-    prime: PRIME,
-};
+pub const ZERO: FieldElement = felt!(0);
+
+pub const ONE: FieldElement = felt!(1);
 
 impl FieldElement {
     pub fn new(num: u128) -> Self {
@@ -49,6 +52,16 @@ impl FieldElement {
         self.value == 0
     }
 
+    pub fn inverse(&self) -> Self {
+        let r = I256::from(self.value);
+        let prime = I256::from(self.prime);
+
+        let inverse =
+            multiplicative_inverse(r, prime).expect("Field Element has a multiplicative inverse");
+
+        Self::new(inverse.into())
+    }
+
     pub fn value(self) -> u128 {
         self.value
     }
@@ -67,6 +80,12 @@ impl ops::Add<FieldElement> for FieldElement {
     }
 }
 
+impl std::ops::AddAssign for FieldElement {
+    fn add_assign(&mut self, rhs: Self) {
+        self.value = (self.value.wrapping_add(rhs.value)) % self.prime;
+    }
+}
+
 impl ops::Sub<FieldElement> for FieldElement {
     type Output = FieldElement;
 
@@ -78,6 +97,16 @@ impl ops::Sub<FieldElement> for FieldElement {
         let diff = l - r;
         let diff = (diff + prime) % prime;
         Self::new(diff.into())
+    }
+}
+
+impl std::ops::SubAssign for FieldElement {
+    fn sub_assign(&mut self, rhs: Self) {
+        if self.value < rhs.value {
+            self.value = self.value.wrapping_add(self.prime).wrapping_sub(rhs.value);
+        } else {
+            self.value -= rhs.value;
+        }
     }
 }
 
