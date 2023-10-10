@@ -82,18 +82,35 @@ impl ops::Mul<I256> for I256 {
     type Output = Self;
 
     fn mul(self, rhs: Self) -> Self::Output {
+        // Initialize a result array with 9 elements to store intermediate multiplication results.
         let mut result = [0u64; 9];
+
+        // This flag will be used to handle overflow during addition.
         let mut carry = false;
+
+        // Iterate over each 64-bit chunk of the left operand.
         for (i, v) in self.value.iter().enumerate() {
+            // For each chunk of the left operand, multiply it with each chunk of the right operand.
             for (j, w) in rhs.value.iter().enumerate() {
+                // Multiply the two chunks. This will result in a 128-bit product.
                 let product = *v as u128 * *w as u128;
+
+                // Split the 128-bit product into two 64-bit chunks: low and high.
                 let low = product & 0xffffffffffffffff;
                 let high = product >> 64;
+
+                // Add the low part of the product to the result, taking into account any carry from the previous step.
                 (result[i + j], carry) = result[i + j].overflowing_add(low as u64 + carry as u64);
+                println!("Intermediate result after adding low part: {:?}", result);
+
+                // Add the high part of the product to the next position in the result, again considering any carry.
                 (result[i + j + 1], carry) =
                     result[i + j + 1].overflowing_add(high as u64 + carry as u64);
+                println!("Intermediate result after adding high part: {:?}", result);
             }
         }
+
+        // Return the final result, but only keep the first 4 chunks as the I256 type has a fixed size.
         Self {
             value: [result[0], result[1], result[2], result[3]],
         }
@@ -546,5 +563,59 @@ mod tests {
             value: [1, 1, 0, 0],
         };
         assert_eq!(expected.value, result.value);
+    }
+
+    #[test]
+    fn test_multiplication_near_boundary() {
+        // `PRIME` is the expression `1 + 407 * 2u128.pow(119)` evaluated
+        // see: https://github.com/aszepieniec/stark-anatomy/blob/76c375505a28e7f02f8803f77f8d7620d834071d/docs/basic-tools.md?plain=1#L113-L119
+        //
+        // This test is essential for ensuring the robustness and correctness of our multiplication
+        // implementation, especially when values approach the maximum representable in the I256 type.
+        //
+        // In many cryptographic contexts, especially those that use modular arithmetic (like STARKs),
+        // operations involving numbers near the modulus (in this case, PRIME) are common. This test
+        // simulates a "worst-case scenario" where two values just shy of the modulus are multiplied
+        // together. The results of such multiplications can potentially overflow the I256 type.
+        //
+        // Two things are being checked here:
+        // 1. That the raw multiplication (without considering any modulus) is correct. This checks
+        //    if the system handles potential overflows correctly. The result is compared against a
+        //    saturating multiplication to ensure no unintended wrap-around occurs.
+        // 2. That the multiplication result modulo PRIME is as expected. In modular arithmetic,
+        //    multiplying two numbers both equal to (PRIME - 1) should yield a result of 1 when taken modulo PRIME.
+        //
+        // Ensuring correctness for this boundary condition is crucial for the overall reliability of
+        // any system built on top of this arithmetic foundation.
+
+        // Given the boundary condition where PRIME is close to the maximum value for I256.
+        let prime = 270497897142230380135924736767050121217_u128;
+        let prime_minus_one = prime - 1_u128;
+        let near_boundary = I256::from(prime_minus_one);
+
+        // When
+        let result = near_boundary * near_boundary;
+
+        // Then
+        // Expected result computation depends on the desired behavior.
+        let mod_prime = result % I256::from(prime);
+
+        assert_eq!(I256::ONE, mod_prime);
+    }
+
+    #[test]
+    fn test_multiplication_near_boundary_ruint() {
+        // we can sanity check our numerics with ruint's
+        use ruint::aliases::U256;
+
+        let prime = U256::from(270497897142230380135924736767050121217_u128);
+        let prime_minus_one = prime - U256::from(1_u128);
+        let result = prime_minus_one * prime_minus_one;
+
+        // Then
+
+        let mod_prime = result % prime;
+
+        assert_eq!(U256::from(1_u128), mod_prime);
     }
 }
