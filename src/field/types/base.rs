@@ -357,20 +357,24 @@ mod tests {
         // see: https://github.com/aszepieniec/stark-anatomy/blob/76c375505a28e7f02f8803f77f8d7620d834071d/docs/basic-tools.md?plain=1#L113-L119
         //
         // This test is essential for ensuring the robustness and correctness of our multiplication
-        // implementation.
+        // implementation, especially when values approach the maximum representable in the I320 type.
         //
         // In many cryptographic contexts, especially those that use modular arithmetic (like STARKs),
         // operations involving numbers near the modulus (in this case, PRIME) are common. This test
         // simulates a "worst-case scenario" where two values just shy of the modulus are multiplied
-        // together.
+        // together. The results of such multiplications can potentially overflow the I320 type.
         //
-        // We check that the multiplication result modulo PRIME is as expected. In modular arithmetic,
-        // multiplying two numbers both equal to (PRIME - 1) should yield a result of 1 when taken modulo PRIME.
+        // Two things are being checked here:
+        // 1. That the raw multiplication (without considering any modulus) is correct. This checks
+        //    if the system handles potential overflows correctly. The result is compared against a
+        //    saturating multiplication to ensure no unintended wrap-around occurs.
+        // 2. That the multiplication result modulo PRIME is as expected. In modular arithmetic,
+        //    multiplying two numbers both equal to (PRIME - 1) should yield a result of 1 when taken modulo PRIME.
         //
         // Ensuring correctness for this boundary condition is crucial for the overall reliability of
         // any system built on top of this arithmetic foundation.
 
-        // Given the boundary condition where PRIME is close to the maximum value for I256 but should be ok with I320.
+        // Given the boundary condition where PRIME is close to the maximum value for I320. [-2^255 + 1; 2^255 - 1]
         let prime = 270497897142230380135924736767050121217_u128;
         let prime_minus_one = prime - 1_u128;
         let near_boundary = I320::from(prime_minus_one);
