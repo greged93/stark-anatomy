@@ -288,7 +288,7 @@ mod tests {
 
         // Then
         let expected = I320 {
-            value: [5, 16, 34, 60, 61], // TODO check that this is correct
+            value: [5, 16, 34, 60, 61],
         };
         assert_eq!(expected.value, result.value);
     }
