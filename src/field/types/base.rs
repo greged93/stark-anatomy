@@ -432,6 +432,17 @@ mod tests {
     }
 
     #[test]
+    fn test_negative_division() {
+        let prime = I320::from(270497897142230380135924736767050121217_u128);
+        let two = I320::from(2u64);
+        let minus_two = -two;
+
+        // Test division
+        let div_result = minus_two / two;
+        assert_eq!(div_result, -I320::ONE, "-2 divided by 2 should equal -1");
+    }
+
+    #[test]
     fn test_rem_simple() {
         // Given
         let a = I320 {
