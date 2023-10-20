@@ -1,9 +1,22 @@
 use ruint::algorithms::div::div;
-use std::ops;
+use std::{
+    fmt::{Debug, Formatter},
+    ops,
+};
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy)]
 pub struct I320 {
     value: [u64; 5],
+}
+
+impl Debug for I320 {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let value = self.abs();
+        if self.sign() {
+            write!(f, "-")?;
+        }
+        write!(f, "{:?}", Into::<u128>::into(value))
+    }
 }
 
 impl I320 {
@@ -84,7 +97,10 @@ impl ops::Mul<I320> for I320 {
     fn mul(self, rhs: Self) -> Self::Output {
         let mut result = [0u64; 10];
         let mut carry = false;
-        for (i, v) in self.value.iter().enumerate() {
+        let signed = self.sign() ^ rhs.sign();
+        let lhs = self.abs();
+        let rhs = rhs.abs();
+        for (i, v) in lhs.value.iter().enumerate() {
             for (j, w) in rhs.value.iter().enumerate() {
                 let product = *v as u128 * *w as u128;
                 let low = product & 0xffffffffffffffff;
@@ -94,8 +110,13 @@ impl ops::Mul<I320> for I320 {
                     result[i + j + 1].overflowing_add(high as u64 + carry as u64);
             }
         }
-        Self {
+        let prod = Self {
             value: [result[0], result[1], result[2], result[3], result[4]],
+        };
+        if signed {
+            -prod
+        } else {
+            prod
         }
     }
 }
@@ -290,6 +311,20 @@ mod tests {
         let expected = I320 {
             value: [5, 16, 34, 60, 61],
         };
+        assert_eq!(expected.value, result.value);
+    }
+
+    #[test]
+    fn test_mul_negative() {
+        // Given
+        let a = I320::from(135248948571115190067962368383525060607u128);
+        let b = I320::from(-1i64);
+
+        // When
+        let result = a * b;
+
+        // Then
+        let expected = -I320::from(135248948571115190067962368383525060607u128);
         assert_eq!(expected.value, result.value);
     }
 
