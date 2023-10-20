@@ -217,4 +217,19 @@ mod tests {
         let expected = FieldElement::new(1);
         assert_eq!(expected.value, result.value);
     }
+
+    #[test]
+    fn test_inv_minus_3() {
+        // Given
+        let a = FieldElement::new(1);
+        let b = FieldElement::new(PRIME - 3);
+
+        // When
+        let result = a / b;
+        let result = result * b;
+
+        // Then
+        let expected = FieldElement::new(1);
+        assert_eq!(expected.value, result.value);
+    }
 }
