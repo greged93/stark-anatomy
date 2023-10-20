@@ -117,6 +117,25 @@ impl ops::Div<FieldElement> for FieldElement {
 mod tests {
     use super::*;
 
+    macro_rules! test_inv_minus {
+        ($value: expr, $minus: ident) => {
+            #[test]
+            fn $minus() {
+                // Given
+                let a = FieldElement::new(1);
+                let b = FieldElement::new(PRIME - $value);
+
+                // When
+                let result = a / b;
+                let result = result * b;
+
+                // Then
+                let expected = FieldElement::new(1);
+                assert_eq!(expected.value, result.value);
+            }
+        };
+    }
+
     #[test]
     fn test_pow() {
         // Given
@@ -188,48 +207,15 @@ mod tests {
         assert_eq!(expected.value, result.value)
     }
 
-    #[test]
-    fn test_inv_minus_1() {
-        // Given
-        let a = FieldElement::new(1);
-        let b = FieldElement::new(PRIME - 1);
-
-        // When
-        let result = a / b;
-        let result = result * b;
-
-        // Then
-        let expected = FieldElement::new(1);
-        assert_eq!(expected.value, result.value);
-    }
-
-    #[test]
-    fn test_inv_minus_2() {
-        // Given
-        let a = FieldElement::new(1);
-        let b = FieldElement::new(PRIME - 2);
-
-        // When
-        let result = a / b;
-        let result = result * b;
-
-        // Then
-        let expected = FieldElement::new(1);
-        assert_eq!(expected.value, result.value);
-    }
-
-    #[test]
-    fn test_inv_minus_3() {
-        // Given
-        let a = FieldElement::new(1);
-        let b = FieldElement::new(PRIME - 3);
-
-        // When
-        let result = a / b;
-        let result = result * b;
-
-        // Then
-        let expected = FieldElement::new(1);
-        assert_eq!(expected.value, result.value);
-    }
+    test_inv_minus!(1, test_inv_minus_1);
+    test_inv_minus!(2, test_inv_minus_2);
+    test_inv_minus!(3, test_inv_minus_3);
+    test_inv_minus!(4, test_inv_minus_4);
+    test_inv_minus!(5, test_inv_minus_5);
+    test_inv_minus!(6, test_inv_minus_6);
+    test_inv_minus!(7, test_inv_minus_7);
+    test_inv_minus!(8, test_inv_minus_8);
+    test_inv_minus!(9, test_inv_minus_9);
+    test_inv_minus!(10, test_inv_minus_10);
+    test_inv_minus!(11, test_inv_minus_11);
 }
