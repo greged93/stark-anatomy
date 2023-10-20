@@ -96,18 +96,19 @@ impl ops::Mul<I320> for I320 {
 
     fn mul(self, rhs: Self) -> Self::Output {
         let mut result = [0u64; 10];
-        let mut carry = false;
         let signed = self.sign() ^ rhs.sign();
         let lhs = self.abs();
         let rhs = rhs.abs();
         for (i, v) in lhs.value.iter().enumerate() {
+            let mut carry_high = false;
             for (j, w) in rhs.value.iter().enumerate() {
+                let mut carry = false;
                 let product = *v as u128 * *w as u128;
                 let low = product & 0xffffffffffffffff;
                 let high = product >> 64;
                 (result[i + j], carry) = result[i + j].overflowing_add(low as u64 + carry as u64);
-                (result[i + j + 1], carry) =
-                    result[i + j + 1].overflowing_add(high as u64 + carry as u64);
+                (result[i + j + 1], carry_high) = result[i + j + 1]
+                    .overflowing_add(high as u64 + carry as u64 + carry_high as u64);
             }
         }
         let prod = Self {
@@ -325,6 +326,28 @@ mod tests {
 
         // Then
         let expected = -I320::from(135248948571115190067962368383525060607u128);
+        assert_eq!(expected.value, result.value);
+    }
+
+    #[test]
+    fn test_mul_high() {
+        // Given
+        let a = I320::from(180331931428153586757283157844700080811u128);
+        let b = I320::from(270497897142230380135924736767050121214u128);
+
+        // When
+        let result = a * b;
+
+        // Then
+        let expected = I320 {
+            value: [
+                12297829382473034410,
+                16080853069464251050,
+                12297829382473034409,
+                7771008069523909290,
+                0,
+            ],
+        };
         assert_eq!(expected.value, result.value);
     }
 
