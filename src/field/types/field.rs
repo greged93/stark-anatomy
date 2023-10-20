@@ -4,7 +4,7 @@ use crate::field::utils::extended_euclidean;
 
 use super::base::I320;
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub struct FieldElement {
     value: u128,
     prime: u128,
@@ -107,6 +107,7 @@ impl ops::Div<FieldElement> for FieldElement {
         let prime = I320::from(self.prime);
 
         let (_, inverse, _) = extended_euclidean(r, prime);
+        let inverse = (inverse + prime) % prime;
         let quotient = (l * inverse) % prime;
         Self::new(quotient.into())
     }
@@ -185,5 +186,35 @@ mod tests {
         // Then
         let expected = FieldElement::new(263166645724356846472197722797662682189);
         assert_eq!(expected.value, result.value)
+    }
+
+    #[test]
+    fn test_inv_minus_1() {
+        // Given
+        let a = FieldElement::new(1);
+        let b = FieldElement::new(PRIME - 1);
+
+        // When
+        let result = a / b;
+        let result = result * b;
+
+        // Then
+        let expected = FieldElement::new(1);
+        assert_eq!(expected.value, result.value);
+    }
+
+    #[test]
+    fn test_inv_minus_2() {
+        // Given
+        let a = FieldElement::new(1);
+        let b = FieldElement::new(PRIME - 2);
+
+        // When
+        let result = a / b;
+        let result = result * b;
+
+        // Then
+        let expected = FieldElement::new(1);
+        assert_eq!(expected.value, result.value);
     }
 }

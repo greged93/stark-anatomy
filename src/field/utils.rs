@@ -37,7 +37,7 @@ mod tests {
     }
 
     #[test]
-    fn test_complex_extended_eucledian() {
+    fn test_mid_extended_eucledian() {
         // Given
         let a = I320::from(6543211245u64);
         let b = I320::from(123456785u64);
@@ -49,5 +49,20 @@ mod tests {
         assert_eq!(g, I320::from(5u64));
         assert_eq!(s, I320::from(6850346u64));
         assert_eq!(t, I320::from(-363068429i64));
+    }
+
+    #[test]
+    fn test_complex_extended_eucledian() {
+        // Given
+        let a = I320::from(270497897142230380135924736767050121215u128);
+        let b = I320::from(270497897142230380135924736767050121217u128);
+
+        // When
+        let (g, s, t) = extended_euclidean(a, b);
+
+        // Then
+        assert_eq!(g, I320::from(1u64));
+        assert_eq!(s, I320::from(135248948571115190067962368383525060608i128));
+        assert_eq!(t, I320::from(-135248948571115190067962368383525060607i128));
     }
 }
