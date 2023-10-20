@@ -352,11 +352,6 @@ mod tests {
     }
 
     #[test]
-    fn test_value() {
-        dbg!(9775813591145556650u64.overflowing_add(9775813591145556649));
-    }
-
-    #[test]
     fn test_mul_near_boundary() {
         // `PRIME` is the expression `1 + 407 * 2u128.pow(119)` evaluated
         // see: https://github.com/aszepieniec/stark-anatomy/blob/76c375505a28e7f02f8803f77f8d7620d834071d/docs/basic-tools.md?plain=1#L113-L119
