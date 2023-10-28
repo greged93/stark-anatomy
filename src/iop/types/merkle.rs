@@ -111,7 +111,7 @@ impl MerkleTree {
         Self::is_leaf_in_tree(self.root, leaf, path, index)
     }
 
-    pub fn is_leaf_in_tree(
+    fn is_leaf_in_tree(
         root: MerkleHash,
         mut leaf: MerkleHash,
         path: &[MerkleHash],
