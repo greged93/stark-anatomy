@@ -41,7 +41,7 @@ impl I320 {
         result
     }
 
-    fn abs(self) -> Self {
+    pub fn abs(self) -> Self {
         if self.sign() {
             -self
         } else {
@@ -49,7 +49,7 @@ impl I320 {
         }
     }
 
-    fn sign(&self) -> bool {
+    pub fn sign(&self) -> bool {
         (self.value[4] & 0x8000000000000000) != 0
     }
 }
@@ -670,26 +670,23 @@ mod tests {
         // Given the boundary condition where PRIME is close to the maximum value for I256.
         let prime = 270497897142230380135924736767050121217_u128;
         let prime_minus_one = prime - 1_u128;
-        let near_boundary = I256::from(prime_minus_one);
+        let near_boundary = I320::from(prime_minus_one);
 
         // When
         let result = near_boundary * near_boundary;
 
         // Then
         // Expected result computation depends on the desired behavior.
-        let expected_value = I256::from((prime_minus_one).saturating_mul(prime_minus_one));
-        let mod_prime = expected_value % I256::from(prime);
-
-        assert_eq!(expected_value, result);
-        assert_eq!(I256::ONE, mod_prime);
+        let mod_prime = result % I320::from(prime);
+        assert_eq!(I320::ONE, mod_prime);
     }
 
     #[test]
     fn test_specific_values_multiplication() {
         // Given the context where we have identified specific values of interest.
         let prime = 270497897142230380135924736767050121217_u128;
-        let value1 = I256::from(1_u128);
-        let value2 = I256::from(200713427363522296808474866102332030979_u128);
+        let value1 = I320::from(1_u128);
+        let value2 = I320::from(200713427363522296808474866102332030979_u128);
 
         // When
         let result = value1 * value2;
@@ -697,7 +694,7 @@ mod tests {
         // Then
         // Expected result without modular arithmetic should be value2 itself.
         let expected_value = value2;
-        let mod_prime = result % I256::from(prime);
+        let mod_prime = result % I320::from(prime);
 
         // Asserting multiplication result
         assert_eq!(
@@ -707,7 +704,7 @@ mod tests {
 
         // Asserting modular arithmetic result
         // Multiplying 1 by any value modulo prime should give the value itself modulo prime.
-        let expected_mod_prime = value2 % I256::from(prime);
+        let expected_mod_prime = value2 % I320::from(prime);
         assert_eq!(
             expected_mod_prime, mod_prime,
             "Expected the modulo result to be consistent with basic modular arithmetic rules."
