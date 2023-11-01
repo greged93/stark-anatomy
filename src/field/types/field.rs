@@ -2,9 +2,11 @@ use std::ops;
 
 use crate::field::utils::{extended_euclidean, multiplicative_inverse};
 
+use std::fmt::{Debug, Formatter};
+
 use super::base::I320;
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, PartialEq, Eq)]
 pub struct FieldElement {
     pub value: u128,
     pub prime: u128,
@@ -20,9 +22,15 @@ macro_rules! felt {
     ($value:expr) => {
         FieldElement {
             value: $value,
-            prime: crate::field::types::field::PRIME,
+            prime: $crate::field::types::field::PRIME,
         }
     };
+}
+
+impl Debug for FieldElement {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self.value())
+    }
 }
 
 pub const ZERO: FieldElement = felt!(0);
@@ -53,8 +61,8 @@ impl FieldElement {
     }
 
     pub fn inverse(&self) -> Self {
-        let r = I256::from(self.value);
-        let prime = I256::from(self.prime);
+        let r = I320::from(self.value);
+        let prime = I320::from(self.prime);
 
         let inverse =
             multiplicative_inverse(r, prime).expect("Field Element has a multiplicative inverse");
@@ -64,6 +72,18 @@ impl FieldElement {
 
     pub fn value(self) -> u128 {
         self.value
+    }
+}
+
+impl std::ops::Neg for FieldElement {
+    type Output = FieldElement;
+
+    fn neg(self) -> Self::Output {
+        if self.value == 0 {
+            self
+        } else {
+            FieldElement::new(self.prime - self.value)
+        }
     }
 }
 
@@ -82,7 +102,8 @@ impl ops::Add<FieldElement> for FieldElement {
 
 impl std::ops::AddAssign for FieldElement {
     fn add_assign(&mut self, rhs: Self) {
-        self.value = (self.value.wrapping_add(rhs.value)) % self.prime;
+        self.value =
+            ((I320::from(self.value) + I320::from(rhs.value)) % I320::from(self.prime)).into();
     }
 }
 
@@ -103,9 +124,10 @@ impl ops::Sub<FieldElement> for FieldElement {
 impl std::ops::SubAssign for FieldElement {
     fn sub_assign(&mut self, rhs: Self) {
         if self.value < rhs.value {
-            self.value = self.value.wrapping_add(self.prime).wrapping_sub(rhs.value);
+            self.value =
+                ((I320::from(self.value) + I320::from(self.prime)) - I320::from(rhs.value)).into();
         } else {
-            self.value -= rhs.value;
+            self.value = (I320::from(self.value) - I320::from(rhs.value)).into();
         }
     }
 }

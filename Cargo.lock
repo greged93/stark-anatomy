@@ -803,8 +803,7 @@ name = "stark-anat"
 version = "0.1.0"
 dependencies = [
  "blake2",
- "generic-array 1.0.0",
- "rand",
+ "eyre",
  "ruint",
  "serde",
  "serde-big-array",
