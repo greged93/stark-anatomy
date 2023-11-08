@@ -19,7 +19,7 @@ impl From<[u8; 64]> for MerkleHash {
 }
 
 impl MerkleHash {
-    pub fn as_bytes(&self) -> &[u8; 64] {
+    pub const fn as_bytes(&self) -> &[u8; 64] {
         &self.inner
     }
 }
@@ -88,12 +88,12 @@ impl MerkleTree {
             // If our desired leaf is in the left half...
             if current_index < mid {
                 // Add the root of the right half to the results.
-                results.push(MerkleTree::commit(&current_slice[mid..]).root);
+                results.push(Self::commit(&current_slice[mid..]).root);
                 // Narrow our focus to the left half.
                 current_slice = &current_slice[..mid];
             } else {
                 // Otherwise, add the root of the left half to the results.
-                results.push(MerkleTree::commit(&current_slice[..mid]).root);
+                results.push(Self::commit(&current_slice[..mid]).root);
                 // Narrow our focus to the right half and adjust the current index.
                 current_slice = &current_slice[mid..];
                 current_index -= mid;
