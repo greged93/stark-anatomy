@@ -155,7 +155,7 @@ impl MerkleTree {
 }
 
 #[cfg(test)]
-mod test {
+mod tests {
     use super::*;
     use rand::{rngs::OsRng, Rng};
 

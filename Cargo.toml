@@ -17,3 +17,6 @@ serde_derive = "1.0.189"
 serde-big-array = "0.5.1"
 
 thiserror = "1.0.50"
+
+[dev-dependencies]
+rand = "0.8.5"
