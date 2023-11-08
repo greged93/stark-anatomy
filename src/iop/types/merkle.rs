@@ -180,10 +180,10 @@ mod test {
         let leaves: Vec<_> = (0..N).map(|_| random_leaf()).collect();
         let tree = MerkleTree::commit(&leaves);
 
-        for i in 0..N {
+        leaves.iter().enumerate().for_each(|(i, leaf)| {
             let path = tree.open(i);
-            assert!(tree.verify(leaves[i], &path, i));
-        }
+            assert!(tree.verify(*leaf, &path, i));
+        });
     }
 
     #[test]
@@ -231,10 +231,10 @@ mod test {
         let leaves: Vec<_> = (0..N).map(|_| random_leaf()).collect();
         let tree = MerkleTree::commit(&leaves);
         let fake_tree = MerkleTree::commit(&vec![random_leaf(); N]);
-        for i in 0..N {
+        leaves.iter().enumerate().for_each(|(i, leaf)| {
             let path = tree.open(i);
-            assert!(!fake_tree.verify(leaves[i], &path, i));
-        }
+            assert!(!fake_tree.verify(*leaf, &path, i));
+        });
     }
 
     fn test_random_leaf_with_original_path(tree: &MerkleTree) {
@@ -253,31 +253,31 @@ mod test {
     }
 
     fn test_original_leaf_with_different_path_index(tree: &MerkleTree, leaves: &[MerkleHash]) {
-        for i in 0..N {
+        leaves.iter().enumerate().for_each(|(i, leaf)| {
             let path = tree.open(i);
             let j = get_different_index(i);
-            assert!(!tree.verify(leaves[i], &path, j));
-        }
+            assert!(!tree.verify(*leaf, &path, j));
+        });
     }
 
     fn test_with_changed_root(tree: &mut MerkleTree, leaves: &[MerkleHash]) {
         let original_root = tree.root;
-        for i in 0..N {
+        leaves.iter().enumerate().for_each(|(i, leaf)| {
             let path = tree.open(i);
             tree.root = random_leaf();
-            assert!(!tree.verify(leaves[i], &path, i));
-        }
+            assert!(!tree.verify(*leaf, &path, i));
+        });
         tree.root = original_root;
     }
 
     fn test_with_tampered_path(tree: &MerkleTree, leaves: &[MerkleHash]) {
-        for i in 0..N {
+        leaves.iter().enumerate().for_each(|(i, leaf)| {
             let path = tree.open(i);
             for j in 0..path.len() {
                 let mut fake_path = path.clone();
                 fake_path[j] = random_leaf();
-                assert!(!tree.verify(leaves[i], &fake_path, i));
+                assert!(!tree.verify(*leaf, &fake_path, i));
             }
-        }
+        });
     }
 }
