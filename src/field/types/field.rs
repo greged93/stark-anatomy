@@ -73,6 +73,10 @@ impl FieldElement {
     pub fn value(self) -> u128 {
         self.value
     }
+
+    pub fn sample(random_bytes: [u8; 16]) -> Self {
+        Self::new(u128::from_be_bytes(random_bytes))
+    }
 }
 
 impl std::ops::Neg for FieldElement {

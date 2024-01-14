@@ -1,6 +1,3 @@
-#[allow(unused_imports)]
-use crate::felt;
-
 use crate::field::types::field::{FieldElement, ONE, ZERO};
 
 #[derive(Clone, Debug)]
@@ -99,7 +96,7 @@ impl Polynomial {
 
         // Initialize the quotient polynomial with enough zeros to match the potential degree.
         let mut quotient = if degree_difference > 0 {
-            vec![ZERO].repeat((degree_difference + 1) as usize).to_vec()
+            [ZERO].repeat((degree_difference + 1) as usize)
         } else {
             vec![ZERO]
         };
@@ -260,7 +257,7 @@ impl Polynomial {
         let mut f = ONE;
 
         // Iterate over each coefficient of the polynomial.
-        for (_i, coeff) in res_coeffs.iter_mut().enumerate() {
+        for coeff in res_coeffs.iter_mut() {
             // Multiply the `i`-th coefficient by `f`, which is `factor^i`.
             *coeff = *coeff * f;
 
@@ -335,6 +332,10 @@ impl std::ops::Mul for Polynomial {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    use crate::felt;
+
+    use rand::{rngs::OsRng, Rng, RngCore};
 
     const TWO: FieldElement = felt!(2);
     const THREE: FieldElement = felt!(3);
@@ -576,5 +577,43 @@ mod tests {
             (domain.len() as isize) - 1,
             "fail interpolate test 3"
         );
+    }
+
+    #[test]
+    fn zerofier() {
+        fn random_fe() -> FieldElement {
+            let mut random_bytes = [0u8; 16];
+            OsRng.fill(&mut random_bytes);
+            FieldElement::sample(random_bytes)
+        }
+
+        for _ in 0..10 {
+            let degree = OsRng.next_u64() as u8;
+            let mut domain = Vec::new();
+
+            for _ in 0..degree {
+                loop {
+                    let fe = random_fe();
+                    if !domain.contains(&fe) {
+                        domain.push(fe);
+                        break;
+                    }
+                }
+            }
+
+            let zerofier = Polynomial::zerofier(&domain);
+            assert_eq!(zerofier.degree(), degree as isize);
+
+            for d in domain.iter() {
+                assert_eq!(zerofier.evaluate(d), ZERO);
+            }
+
+            // does not equal to zero in atleast one element outside of its domain
+            let mut randfe = random_fe();
+            while domain.contains(&randfe) {
+                randfe = random_fe();
+            }
+            assert_ne!(zerofier.evaluate(&randfe), ZERO);
+        }
     }
 }
