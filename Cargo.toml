@@ -13,8 +13,6 @@ blake2 = "0.10.6"
 sha2 = "0.10.8"
 
 generic-array = "1.0.0"
-ruint = "1.10.1"
-
 serde = "1.0.189"
 serde_json = "1.0.108"
 serde_derive = "1.0.189"

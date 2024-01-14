@@ -49,7 +49,7 @@ impl I320 {
         }
     }
 
-    pub fn sign(&self) -> bool {
+    pub const fn sign(&self) -> bool {
         (self.value[4] & 0x8000000000000000) != 0
     }
 }

@@ -1,3 +1,4 @@
+#[allow(unused_imports)]
 use crate::felt;
 
 use crate::field::types::field::{FieldElement, ONE, ZERO};
@@ -8,7 +9,7 @@ pub struct Polynomial(pub Vec<FieldElement>);
 // univariate
 impl Polynomial {
     pub fn new(coefficients: &[FieldElement]) -> Self {
-        Polynomial(coefficients.into())
+        Self(coefficients.into())
     }
 
     // degree is the length of the list minus the number of trailing zeroes
@@ -77,18 +78,18 @@ impl Polynomial {
     /// # Panics
     ///
     /// This method panics if `other` is a zero polynomial, since division by zero is undefined.
-    pub fn qdiv(&self, other: impl Into<Polynomial>) -> (Polynomial, Polynomial) {
+    pub fn qdiv(&self, other: impl Into<Self>) -> (Self, Self) {
         // Convert the input to a Polynomial and trim its trailing zeros.
-        let other_poly: Polynomial = other.into();
-        let other_elems = Polynomial::canonical_form(&other_poly.0);
+        let other_poly: Self = other.into();
+        let other_elems = Self::canonical_form(&other_poly.0);
         assert!(!other_elems.is_empty(), "Dividing by zero polynomial.");
 
         // Trim trailing zeros from the self polynomial.
-        let self_elems = Polynomial::canonical_form(&self.0);
+        let self_elems = Self::canonical_form(&self.0);
 
         // If the dividend polynomial is a zero polynomial, the quotient and remainder are both zero.
         if self_elems.is_empty() {
-            return (Polynomial(vec![]), Polynomial(vec![]));
+            return (Self(vec![]), Self(vec![]));
         }
 
         // Begin polynomial long division.
@@ -112,7 +113,7 @@ impl Polynomial {
             quotient[degree_difference as usize] += tmp;
 
             // Initialize the index of the last non-zero coefficient of the remainder.
-            let mut last_non_zero = degree_difference as isize - 1;
+            let mut last_non_zero = degree_difference - 1;
 
             // Subtract the divisor polynomial times the computed factor from the remainder.
             for (i, coef) in other_elems.iter().enumerate() {
@@ -131,7 +132,7 @@ impl Polynomial {
         }
 
         // Return the quotient and remainder after removing any potential trailing zeros from the quotient.
-        (Polynomial(Self::canonical_form(&quotient)), Polynomial(rem))
+        (Self(Self::canonical_form(&quotient)), Self(rem))
     }
 
     /// `apply_pairwise` takes two lists of field elements (representing polynomial coefficients)
@@ -170,21 +171,22 @@ impl Polynomial {
     /// - lagrange_polynomials: the polynomials obtained from calculate_lagrange_polynomials.
     ///
     /// Returns the interpolated polynomial.
-    fn interpolate_domain(domain: &[FieldElement], values: &[FieldElement]) -> Polynomial {
-        let x = Polynomial::new(&[ZERO, ONE]);
+    #[allow(dead_code)]
+    fn interpolate_domain(domain: &[FieldElement], values: &[FieldElement]) -> Self {
+        let x = Self::new(&[ZERO, ONE]);
 
-        let mut accumulator = Polynomial::new(&[ZERO]);
+        let mut accumulator = Self::new(&[ZERO]);
 
         for i in 0..domain.len() {
-            let mut product = Polynomial::new(&[values[i]]);
+            let mut product = Self::new(&[values[i]]);
 
             for j in 0..domain.len() {
                 if i == j {
                     continue;
                 }
 
-                let term = (x.clone() - Polynomial::new(&[domain[j]]))
-                    * Polynomial::new(&[(domain[i] - domain[j]).inverse()]);
+                let term = (x.clone() - Self::new(&[domain[j]]))
+                    * Self::new(&[(domain[i] - domain[j]).inverse()]);
 
                 product = product * term;
             }
@@ -280,7 +282,7 @@ impl PartialEq for Polynomial {
 }
 
 impl std::ops::Add for Polynomial {
-    type Output = Polynomial;
+    type Output = Self;
 
     fn add(self, other: Self) -> Self::Output {
         Self(Self::apply_pairwise(&self.0, &other.0, |x, y| x + y, ZERO))
@@ -288,7 +290,7 @@ impl std::ops::Add for Polynomial {
 }
 
 impl std::ops::Sub for Polynomial {
-    type Output = Polynomial;
+    type Output = Self;
 
     fn sub(self, other: Self) -> Self::Output {
         Self(Self::apply_pairwise(&self.0, &other.0, |x, y| x - y, ZERO))
@@ -296,15 +298,15 @@ impl std::ops::Sub for Polynomial {
 }
 
 impl std::ops::Neg for Polynomial {
-    type Output = Polynomial;
+    type Output = Self;
 
     fn neg(self) -> Self::Output {
-        Polynomial(vec![]) - self
+        Self(vec![]) - self
     }
 }
 
 impl std::ops::Mul for Polynomial {
-    type Output = Polynomial;
+    type Output = Self;
 
     fn mul(self, other: Self) -> Self::Output {
         // Initialize a vector to store the coefficients of the resulting polynomial.
@@ -387,7 +389,7 @@ mod tests {
         assert_eq!(a.clone() + b.clone(), Polynomial::new(&[THREE, THREE]));
 
         // Testing multiplication
-        assert_eq!(a.clone() * b.clone(), Polynomial::new(&[TWO, FIVE, TWO]));
+        assert_eq!(a * b, Polynomial::new(&[TWO, FIVE, TWO]));
     }
 
     #[test]
@@ -449,7 +451,7 @@ mod tests {
         let b = Polynomial::new(&[TWO, TWO, ONE]);
         let expected_product = Polynomial::new(&[TWO, TWO, felt!(11), felt!(14), felt!(9), TWO]);
 
-        let actual_product = a.clone() * b.clone();
+        let actual_product = a * b;
 
         assert_eq!(
             actual_product, expected_product,
@@ -463,7 +465,7 @@ mod tests {
         let b = Polynomial::new(&[TWO, TWO, ONE]);
         let expected_difference = Polynomial::new(&[-ONE, -TWO, FOUR, TWO]); // Adjusted for correct size.
 
-        let actual_difference = a.clone() - b.clone();
+        let actual_difference = a - b;
 
         assert_eq!(
             actual_difference, expected_difference,
@@ -477,7 +479,7 @@ mod tests {
         let a = Polynomial::new(&[ONE, ZERO, FIVE, TWO]);
         let expected_quo = Polynomial::new(&[TWO, TWO, ONE]);
 
-        let (quo, _rem) = product.qdiv(a.clone());
+        let (quo, _rem) = product.qdiv(a);
 
         assert_eq!(quo, expected_quo, "Quotient did not match expected value");
     }
@@ -491,7 +493,7 @@ mod tests {
         let (quo, rem) = (a.clone() * b.clone()).qdiv(a.clone());
 
         assert!(rem.is_zero(), "division a*b/a should have no remainder");
-        assert_eq!(quo, b.clone(), "division a*b/a should have quotient of b");
+        assert_eq!(quo, b, "division a*b/a should have quotient of b");
 
         let (quo, rem) = (a.clone() * b.clone()).qdiv(b.clone());
 
@@ -505,10 +507,7 @@ mod tests {
             "division a*b/b should not be divisible by c"
         );
 
-        assert!(
-            quo * c.clone() + rem == a.clone() * b.clone(),
-            "quo * c + rem == a*b"
-        );
+        assert!(quo * c + rem == a * b, "quo * c + rem == a*b");
     }
 
     #[test]
@@ -534,7 +533,7 @@ mod tests {
                 a,
                 (quo.clone() * b.clone()) + rem.clone(),
                 "a should be equal to quo * {:?} + rem",
-                b.clone()
+                b
             );
 
             // Additional checks

@@ -76,13 +76,13 @@ impl FieldElement {
 }
 
 impl std::ops::Neg for FieldElement {
-    type Output = FieldElement;
+    type Output = Self;
 
     fn neg(self) -> Self::Output {
         if self.value == 0 {
             self
         } else {
-            FieldElement::new(self.prime - self.value)
+            Self::new(self.prime - self.value)
         }
     }
 }
