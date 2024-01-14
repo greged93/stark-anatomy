@@ -4,6 +4,20 @@ use crate::field::types::field::{FieldElement, ONE, ZERO};
 pub struct Polynomial(pub Vec<FieldElement>);
 
 // univariate
+
+/// from stark anatomy:
+///
+/// Univariate polynomials are immensely useful in proof systems because
+/// relations that apply to their coefficient vectors extend to their values on a potentially much larger domain.
+/// If polynomials are equal, they are equal everywhere;
+/// whereas if they are unequal, they are unequal almost everywhere.
+/// By this feature, univariate polynomials reduce
+/// claims about large vectors to
+/// claims about the values of their corresponding polynomials in a small selection of sufficiently random points.
+///
+/// Identity of the 'whole' polynomial can be inferred at a statistical level
+/// via equality of a subset of its parts, if sufficiently random.
+///
 impl Polynomial {
     pub fn new(coefficients: &[FieldElement]) -> Self {
         Self(coefficients.into())
