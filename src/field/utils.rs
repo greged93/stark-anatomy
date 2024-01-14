@@ -17,12 +17,23 @@ pub(crate) fn extended_euclidean(a: I320, b: I320) -> (I320, I320, I320) {
     }
 }
 
+pub(crate) fn multiplicative_inverse(a: I320, m: I320) -> Option<I320> {
+    let (g, x, _) = extended_euclidean(a, m);
+    if g != I320::ONE {
+        // a and m are not coprime, thus a doesn't have an inverse modulo m
+        None
+    } else {
+        // x might be negative, so we standardize it to be between 0 and m-1
+        Some((x % m + m) % m)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-    fn test_basic_extended_eucledian() {
+    fn test_basic_extended_euclidean() {
         // Given
         let a = I320::from(240u64);
         let b = I320::from(46u64);
@@ -37,7 +48,7 @@ mod tests {
     }
 
     #[test]
-    fn test_mid_extended_eucledian() {
+    fn test_complex_extended_euclidean() {
         // Given
         let a = I320::from(6543211245u64);
         let b = I320::from(123456785u64);
@@ -52,17 +63,25 @@ mod tests {
     }
 
     #[test]
-    fn test_complex_extended_eucledian() {
+    fn test_multiplicative_inverse_of_2_mi() {
         // Given
-        let a = I320::from(270497897142230380135924736767050121215u128);
-        let b = I320::from(270497897142230380135924736767050121217u128);
+        let prime = I320::from(270497897142230380135924736767050121217_u128);
+        let a = I320::from(2_u128);
+        let expected_inverse = I320::from(135248948571115190067962368383525060609_u128);
 
         // When
-        let (g, s, t) = extended_euclidean(a, b);
+        let inverse = multiplicative_inverse(a, prime).unwrap();
 
         // Then
-        assert_eq!(g, I320::from(1u64));
-        assert_eq!(s, I320::from(135248948571115190067962368383525060608i128));
-        assert_eq!(t, I320::from(-135248948571115190067962368383525060607i128));
+        assert_eq!(
+            inverse, expected_inverse,
+            "Multiplicative inverse is incorrect"
+        );
+
+        assert_eq!(
+            (inverse * a) % prime,
+            I320::ONE,
+            "Multiplicative inverse check failed"
+        );
     }
 }
