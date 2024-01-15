@@ -19,6 +19,14 @@ pub struct Polynomial(pub Vec<FieldElement>);
 /// via equality of a subset of its parts, if sufficiently random.
 ///
 impl Polynomial {
+    pub fn zero() -> Self {
+        Self(vec![ZERO])
+    }
+
+    pub fn one() -> Self {
+        Self(vec![ONE])
+    }
+
     pub fn new(coefficients: &[FieldElement]) -> Self {
         Self(coefficients.into())
     }
@@ -183,7 +191,7 @@ impl Polynomial {
     ///
     /// Returns the interpolated polynomial.
     #[allow(dead_code)]
-    fn interpolate_domain(domain: &[FieldElement], values: &[FieldElement]) -> Self {
+    pub fn interpolate_domain(domain: &[FieldElement], values: &[FieldElement]) -> Self {
         let x = Self::new(&[ZERO, ONE]);
 
         let mut accumulator = Self::new(&[ZERO]);
@@ -281,6 +289,25 @@ impl Polynomial {
 
         // Normalize the coefficients of the resulting polynomial.
         Self(Self::canonical_form(&res_coeffs))
+    }
+
+    pub fn pow(&self, n: usize) -> Self {
+        if self.is_zero() {
+            return Self::zero();
+        }
+        if n == 0 {
+            return Self::one();
+        }
+
+        let mut acc = Self::one();
+        for b in (0..usize::BITS).rev().map(|i| (n >> i) & 1) {
+            acc = acc.clone() * acc;
+            if b != 0 {
+                acc = acc * self.clone();
+            }
+        }
+
+        Self(Self::canonical_form(&acc.0))
     }
 }
 
@@ -561,7 +588,6 @@ mod tests {
     fn test_interpolate() {
         let values = vec![FIVE, TWO, TWO, ONE, FIVE, ZERO];
         let domain: Vec<FieldElement> = (0..=5).map(|i| felt!(i)).collect();
-        dbg!(&domain);
         // call into interpolate_domain
         let poly = Polynomial::interpolate_domain(&domain, &values);
 
