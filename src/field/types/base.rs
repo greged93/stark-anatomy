@@ -41,7 +41,7 @@ impl I320 {
         result
     }
 
-    fn abs(self) -> Self {
+    pub fn abs(self) -> Self {
         if self.sign() {
             -self
         } else {
@@ -49,7 +49,7 @@ impl I320 {
         }
     }
 
-    fn sign(&self) -> bool {
+    pub const fn sign(&self) -> bool {
         (self.value[4] & 0x8000000000000000) != 0
     }
 }
@@ -362,15 +362,19 @@ mod tests {
         // In many cryptographic contexts, especially those that use modular arithmetic (like STARKs),
         // operations involving numbers near the modulus (in this case, PRIME) are common. This test
         // simulates a "worst-case scenario" where two values just shy of the modulus are multiplied
-        // together.
+        // together. The results of such multiplications can potentially overflow the I320 type.
         //
-        // We check that the multiplication result modulo PRIME is as expected. In modular arithmetic,
-        // multiplying two numbers both equal to (PRIME - 1) should yield a result of 1 when taken modulo PRIME.
+        // Two things are being checked here:
+        // 1. That the raw multiplication (without considering any modulus) is correct. This checks
+        //    if the system handles potential overflows correctly. The result is compared against a
+        //    saturating multiplication to ensure no unintended wrap-around occurs.
+        // 2. That the multiplication result modulo PRIME is as expected. In modular arithmetic,
+        //    multiplying two numbers both equal to (PRIME - 1) should yield a result of 1 when taken modulo PRIME.
         //
         // Ensuring correctness for this boundary condition is crucial for the overall reliability of
         // any system built on top of this arithmetic foundation.
 
-        // Given the boundary condition where PRIME is close to the maximum value for I256 but should be ok with I320.
+        // Given the boundary condition where PRIME is close to the maximum value for I320. [-2^255 + 1; 2^255 - 1]
         let prime = 270497897142230380135924736767050121217_u128;
         let prime_minus_one = prime - 1_u128;
         let near_boundary = I320::from(prime_minus_one);
@@ -638,5 +642,35 @@ mod tests {
             value: [1, 1, 0, 0, 0],
         };
         assert_eq!(expected.value, result.value);
+    }
+
+    #[test]
+    fn test_specific_values_multiplication() {
+        // Given the context where we have identified specific values of interest.
+        let prime = 270497897142230380135924736767050121217_u128;
+        let value1 = I320::from(1_u128);
+        let value2 = I320::from(200713427363522296808474866102332030979_u128);
+
+        // When
+        let result = value1 * value2;
+
+        // Then
+        // Expected result without modular arithmetic should be value2 itself.
+        let expected_value = value2;
+        let mod_prime = result % I320::from(prime);
+
+        // Asserting multiplication result
+        assert_eq!(
+            expected_value, result,
+            "Expected the multiplication of 1 with any value to be the value itself."
+        );
+
+        // Asserting modular arithmetic result
+        // Multiplying 1 by any value modulo prime should give the value itself modulo prime.
+        let expected_mod_prime = value2 % I320::from(prime);
+        assert_eq!(
+            expected_mod_prime, mod_prime,
+            "Expected the modulo result to be consistent with basic modular arithmetic rules."
+        );
     }
 }

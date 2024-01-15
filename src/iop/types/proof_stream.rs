@@ -50,7 +50,6 @@ impl<'de, S: Serialize + Deserialize<'de> + Clone + Debug> ProofStream<'de, S> {
 
     pub fn prover_fiat_shamir(&mut self) -> ProofStreamResult<[u8; 32]> {
         let mut hasher = Sha256::new();
-        dbg!(&mut self.serialize()?.to_vec());
         hasher.update(&mut self.serialize()?.to_vec());
         Ok(hasher.finalize().into())
     }
@@ -58,7 +57,7 @@ impl<'de, S: Serialize + Deserialize<'de> + Clone + Debug> ProofStream<'de, S> {
     pub fn verifier_fiat_shamir(&mut self) -> ProofStreamResult<[u8; 32]> {
         let mut hasher = Sha256::new();
         let items = &self.items[0..self.read_index];
-        dbg!(&mut serialize_inner(items)?.to_vec());
+
         hasher.update(&mut serialize_inner(items)?.to_vec());
         Ok(hasher.finalize().into())
     }
